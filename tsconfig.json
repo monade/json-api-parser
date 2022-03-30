@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+      "declaration": true,
+      "alwaysStrict": true,
+      "strict": true,
+      "esModuleInterop": true,
+      "experimentalDecorators": true,
+      "declarationDir": "dist/types",
+      "lib": ["es2015", "DOM"]
+  },
+  "exclude": ["dist", "node_modules", "test"]
+}
