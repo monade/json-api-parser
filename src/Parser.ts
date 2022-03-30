@@ -44,7 +44,7 @@ export class Parser {
     } else if ("data" in data && !("id" in data)) {
       return this.parse(data.data, data.included || included);
     } else {
-      return this.parseElement(data, included) as T;
+      return this.parseElement(data, included);
     }
   }
 

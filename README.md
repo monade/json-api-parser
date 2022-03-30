@@ -13,7 +13,7 @@ A parser for [JSON:API](https://jsonapi.org/) format that maps data to models us
 ## Example usage
 
 ```typescript
-import { Attr, JSONAPI, Model, Rel } from "../src";
+import { Attr, JSONAPI, Model, Rel } from "@monade/json-api-parser";
 
 export const DateParser = (data: any) => new Date(data);
 
