@@ -24,8 +24,8 @@
   },
   "scripts": {
     "build": "rm -rf dist && rollup -c && tsc --emitDeclarationOnly",
-    "prepublish:public": "build && yarn bump-version",
-    "publish:public": "publish --access public",
+    "prepublish:public": "yarn build",
+    "publish:public": "yarn publish --access public",
     "test": "jest"
   },
   "files": [

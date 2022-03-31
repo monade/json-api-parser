@@ -7,7 +7,7 @@ A parser for [JSON:API](https://jsonapi.org/) format that maps data to models us
 ## Installation
 
 ```bash
-  npm install https://github.com/monade/json-api-parser.git
+  npm install @monade/json-api-parser
 ```
 
 ## Example usage
@@ -42,4 +42,3 @@ class User extends Model {
 ## TODO
 * Documentation
 * Edge case tests
-* Release on NPM
