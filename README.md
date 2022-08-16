@@ -43,3 +43,13 @@ class User extends Model {
 ## TODO
 * Documentation
 * Edge case tests
+
+
+About Monade
+----------------
+
+![monade](https://monade.io/wp-content/uploads/2021/06/monadelogo.png)
+
+json-api-parser is maintained by [mònade srl](https://monade.io/en/home-en/).
+
+We <3 open source software. [Contact us](https://monade.io/en/contact-us/) for your next project!
