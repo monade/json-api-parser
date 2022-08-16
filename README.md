@@ -1,4 +1,5 @@
 ![Tests](https://github.com/monade/json-api-parser/actions/workflows/test.yml/badge.svg)
+[![npm version](https://badge.fury.io/js/@monade%2Fjson-api-parser.svg)](https://badge.fury.io/js/@monade%2Fjson-api-parser)
 
 # @monade/json-api-parser
 
