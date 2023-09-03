@@ -1,8 +1,21 @@
 export class Model {
   id!: string;
+  _type!: string;
 
-  toJSON(): any {
-    return { ...this };
+  toJSON(maxDepth = 100): any {
+    const response: any = { ...this };
+    delete response._type;
+
+    for (const key in response) {
+      if (response[key] instanceof Model) {
+        if (maxDepth <= 0) {
+          delete response[key]
+        } else {
+          response[key] = response[key].toJSON(maxDepth - 1);
+        }
+      }
+    }
+    return response;
   }
 
   toFormData() {

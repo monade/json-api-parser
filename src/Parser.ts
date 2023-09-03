@@ -44,7 +44,7 @@ export class Parser {
     } else if ("data" in data && !("id" in data)) {
       return this.parse(data.data, data.included || included);
     } else {
-      return this.parseElement(data, included);
+      return this.parseElement(data as JSONModel, included);
     }
   }
 
@@ -57,7 +57,7 @@ export class Parser {
   parseElement<T>(element: JSONModel, included: JSONModel[]): T {
     const uniqueKey = `${element.id}$${element.type}`;
     if (this.resolved[uniqueKey]) {
-      return this.resolved[uniqueKey] as any;
+      return this.resolved[uniqueKey] as T;
     }
 
     const loadedElement = Parser.load(element, included);
@@ -65,6 +65,14 @@ export class Parser {
     const model = Parser.$registeredModels.find(
       (e) => e.type === loadedElement.type
     );
+
+    const instance = new (model?.klass || Model)();
+    this.resolved[uniqueKey] = instance;
+
+    if (model && model.createFn) {
+      return model.createFn(instance, loadedElement, (relation) => this.parse(relation, included)) as T;
+    }
+
     const attrData = Parser.$registeredAttributes.find(
       (e) => e.klass === model?.klass
     );
@@ -72,36 +80,16 @@ export class Parser {
       (e) => e.klass === model?.klass
     );
 
-    const instance = new (model?.klass || Model)();
-
-    this.resolved[uniqueKey] = instance;
-
     instance.id = loadedElement.id;
-    for (const key in loadedElement.attributes) {
-      const parser = attrData?.attributes?.[key];
-      if (parser) {
-        (instance as any)[parser.key] = parser.parser(
-          loadedElement.attributes[key]
-        );
-      } else {
-        (instance as any)[key] = loadedElement.attributes[key];
-        debug(`Undeclared key "${key}" in "${loadedElement.type}"`);
-      }
-    }
+    instance._type = loadedElement.type;
 
-    if (attrData) {
-      for (const key in attrData.attributes) {
-        const parser: RegisteredProperty = attrData.attributes[key];
-        if (!(parser.key in instance)) {
-          if ("default" in parser) {
-            (instance as any)[parser.key] = parser.default;
-          } else {
-            debug(`Missing attribute "${key}" in "${loadedElement.type}"`);
-          }
-        }
-      }
-    }
+    this.parseAttributes(instance, loadedElement, attrData);
+    this.parseRelationships(instance, loadedElement, relsData, included);
 
+    return instance as T;
+  }
+
+  private parseRelationships(instance: Model, loadedElement: JSONModel, relsData: RegisteredAttribute | undefined, included: JSONModel[]) {
     for (const key in loadedElement.relationships) {
       const relation = loadedElement.relationships[key];
       const parser = relsData?.attributes?.[key];
@@ -127,8 +115,33 @@ export class Parser {
         }
       }
     }
+  }
 
-    return instance as any;
+  private parseAttributes(instance: Model, loadedElement: JSONModel, attrData: RegisteredAttribute | undefined) {
+    for (const key in loadedElement.attributes) {
+      const parser = attrData?.attributes?.[key];
+      if (parser) {
+        (instance as any)[parser.key] = parser.parser(
+          loadedElement.attributes[key]
+        );
+      } else {
+        (instance as any)[key] = loadedElement.attributes[key];
+        debug(`Undeclared key "${key}" in "${loadedElement.type}"`);
+      }
+    }
+
+    if (attrData) {
+      for (const key in attrData.attributes) {
+        const parser: RegisteredProperty = attrData.attributes[key];
+        if (!(parser.key in instance)) {
+          if ("default" in parser) {
+            (instance as any)[parser.key] = parser.default;
+          } else {
+            debug(`Missing attribute "${key}" in "${loadedElement.type}"`);
+          }
+        }
+      }
+    }
   }
 
   static load(element: JSONModel, included: JSONModel[]) {

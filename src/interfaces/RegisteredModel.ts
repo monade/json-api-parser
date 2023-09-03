@@ -1,6 +1,10 @@
 import { Model } from "../Model";
+import { JSONModel } from "./JSONModel";
 
-export interface RegisteredModel {
+type CreateFunction = (instance: Model, modelData: JSONModel, resolverFn: (data: any) => Model | Model[] | null) => Model
+
+export type RegisteredModel = {
   type: string;
-  klass: typeof Model;
+  klass?: typeof Model;
+  createFn?: CreateFunction;
 }
