@@ -78,6 +78,7 @@ debug.adapter = (level, ...args) => {
   }
 };
 
+const IGNORED_KEYS = ['Symbol(', '_', '$', '#'];
 class Parser {
   resolved = {};
   constructor(data, included = []) {
@@ -140,8 +141,11 @@ class Parser {
             return true;
           }
           if (prop in target) {
-            debug('warn', `Trying to call property ${prop.toString()} to a model that is not included ("${loadedElement.type}"). Maybe you mean't to include it?`);
             return target[prop];
+          }
+          const propString = prop.toString();
+          if (IGNORED_KEYS.some(k => propString.startsWith(k))) {
+            return undefined;
           }
           debug('error', `Trying to call property "${prop.toString()}" to a model that is not included. Add "${loadedElement.type}" to included models.`);
           return undefined;
