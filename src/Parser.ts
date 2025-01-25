@@ -91,11 +91,12 @@ export class Parser {
         instance,
         {
           get: function<T extends object>(target: T, prop: keyof T) {
-            if (prop in target) {
-              return target[prop];
-            }
             if (prop === "$_partial") {
               return true;
+            }
+            if (prop in target) {
+              debug('warn', `Trying to call property ${prop.toString()} to a model that is not included ("${loadedElement.type}"). Maybe you mean't to include it?`);
+              return target[prop];
             }
             debug('error', `Trying to call property "${prop.toString()}" to a model that is not included. Add "${loadedElement.type}" to included models.`);
             return undefined;
