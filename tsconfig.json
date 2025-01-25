@@ -6,7 +6,10 @@
       "esModuleInterop": true,
       "experimentalDecorators": true,
       "declarationDir": "dist/types",
+      "target": "ES2015",
+      "moduleResolution": "node",
       "lib": ["es2015", "DOM"]
+
   },
   "exclude": ["dist", "node_modules", "test"]
 }

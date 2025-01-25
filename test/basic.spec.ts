@@ -8,7 +8,8 @@ const parsable = `{
       "attributes": { "name": "My post", "ciao": null, "description": "ciao", "created_at": "2020-10-10T10:32:00Z" },
       "relationships": {
         "user": { "data": { "id": "3", "type": "users" } },
-        "reviewer": { "data": null }
+        "reviewer": { "data": null },
+        "relatedPost": { "data": { "id": "10", "type": "posts" } }
       }
     }
   ],
@@ -23,7 +24,7 @@ const parsable = `{
 
 let logs: string[] = [];
 
-debug.adapter = (...args: any[]) => logs.push(args[0]);
+debug.adapter = (...args: any[]) => logs.push(args[1]);
 
 const jsonObject = JSON.parse(parsable);
 
@@ -83,6 +84,18 @@ test("parses all relationships", () => {
   expect(model.reviewer).toBe(null);
 });
 
+test("returns a Proxy when accessing to a not included model", () => {
+  const model = parsed[0];
+
+  expect(typeof model.id === "string").toBeTruthy();
+  expect(model.id).toBe(jsonObject.data[0].id);
+
+  expect(model.relatedPost?.id).toBe(jsonObject.data[0]['relationships']['relatedPost']['data'].id);
+  expect(model.relatedPost?.content).toBe(undefined);
+  expect(logs.at(-1)).toBe("Trying to call property \"content\" to a model that is not included. Add \"posts\" to included models.");
+  expect((model.relatedPost as any)?.$_partial).toBe(true);
+});
+
 test("parses circular references", () => {
   const post = parsed[0];
   const favouritePost = parsed[0].author.favouritePost;
@@ -95,4 +108,26 @@ test("logs missing attributes", () => {
 
 test("logs undeclared attributes", () => {
   expect(logs.find((e) => e.indexOf(`Undeclared key "ciao" in "posts`)));
+});
+
+test("toJSON has a max depth", () => {
+  const post = parsed[0];
+  expect(JSON.stringify(post.toJSON(1))).toBe(`
+    {"id":"2","name":"My post","ciao":null,"content":"ciao","createdAt":"2020-10-10T10:32:00.000Z","enabled":true,"author":{"id":"3","firstName":"Gino","lastName":"Pino","createdAt":"2020-10-15T10:32:00.000Z"},"reviewer":null,"relatedPost":{"id":"10","enabled":true}}
+  `.trim());
+});
+
+test("toDTO removes _type and converts relationships to ids", () => {
+  const post = parsed[0];
+  expect(post.toDTO()).toEqual({
+    id: "2",
+    name: "My post",
+    content: "ciao",
+    createdAt: new Date("2020-10-10T10:32:00.000Z"),
+    enabled: true,
+    ciao: null,
+    authorId: "3",
+    reviewerId: null,
+    relatedPostId: "10",
+  });
 });

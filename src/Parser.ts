@@ -1,16 +1,12 @@
 import { JSONData } from "./interfaces/JSONData";
 import { JSONModel } from "./interfaces/JSONModel";
 import { RegisteredAttribute } from "./interfaces/RegisteredAttribute";
-import { RegisteredModel } from "./interfaces/RegisteredModel";
 import { RegisteredProperty } from "./interfaces/RegisteredProperty";
 import { Model } from "./Model";
+import { $registeredAttributes, $registeredModels, $registeredRelationships } from "./data";
 import { debug } from "./utils";
 
 export class Parser {
-  static $registeredModels: RegisteredModel[] = [];
-  static $registeredAttributes: RegisteredAttribute[] = [];
-  static $registeredRelationships: RegisteredAttribute[] = [];
-
   readonly resolved: Record<string, Model> = {};
 
   constructor(
@@ -62,21 +58,21 @@ export class Parser {
 
     const loadedElement = Parser.load(element, included);
 
-    const model = Parser.$registeredModels.find(
+    const model = $registeredModels.find(
       (e) => e.type === loadedElement.type
     );
 
-    const instance = new (model?.klass || Model)();
+    const instance = this.wrapWhenPartial(new (model?.klass || Model)(), loadedElement);
     this.resolved[uniqueKey] = instance;
 
     if (model && model.createFn) {
       return model.createFn(instance, loadedElement, (relation) => this.parse(relation, included)) as T;
     }
 
-    const attrData = Parser.$registeredAttributes.find(
+    const attrData = $registeredAttributes.find(
       (e) => e.klass === model?.klass
     );
-    const relsData = Parser.$registeredRelationships.find(
+    const relsData = $registeredRelationships.find(
       (e) => e.klass === model?.klass
     );
 
@@ -89,6 +85,27 @@ export class Parser {
     return instance as T;
   }
 
+  wrapWhenPartial(instance: Model, loadedElement: JSONModel & { $_partial?: boolean }) {
+    if (loadedElement.$_partial) {
+      return new Proxy(
+        instance,
+        {
+          get: function<T extends object>(target: T, prop: keyof T) {
+            if (prop in target) {
+              return target[prop];
+            }
+            if (prop === "$_partial") {
+              return true;
+            }
+            debug('error', `Trying to call property "${prop.toString()}" to a model that is not included. Add "${loadedElement.type}" to included models.`);
+            return undefined;
+          },
+        })
+    }
+
+    return instance;
+  }
+
   private parseRelationships(instance: Model, loadedElement: JSONModel, relsData: RegisteredAttribute | undefined, included: JSONModel[]) {
     for (const key in loadedElement.relationships) {
       const relation = loadedElement.relationships[key];
@@ -99,7 +116,7 @@ export class Parser {
         );
       } else {
         (instance as any)[key] = this.parse(relation, included);
-        debug(`Undeclared relationship "${key}" in "${loadedElement.type}"`);
+        debug('warn', `Undeclared relationship "${key}" in "${loadedElement.type}"`);
       }
     }
 
@@ -110,7 +127,7 @@ export class Parser {
           if ("default" in parser) {
             (instance as any)[parser.key] = parser.default;
           } else {
-            debug(`Missing relationships "${key}" in "${loadedElement.type}"`);
+            debug('warn', `Missing relationships "${key}" in "${loadedElement.type}"`);
           }
         }
       }
@@ -126,7 +143,7 @@ export class Parser {
         );
       } else {
         (instance as any)[key] = loadedElement.attributes[key];
-        debug(`Undeclared key "${key}" in "${loadedElement.type}"`);
+        debug('warn', `Undeclared key "${key}" in "${loadedElement.type}"`);
       }
     }
 
@@ -137,7 +154,7 @@ export class Parser {
           if ("default" in parser) {
             (instance as any)[parser.key] = parser.default;
           } else {
-            debug(`Missing attribute "${key}" in "${loadedElement.type}"`);
+            debug('warn', `Missing attribute "${key}" in "${loadedElement.type}"`);
           }
         }
       }
@@ -150,7 +167,7 @@ export class Parser {
     );
     if (!found) {
       debug(
-        `Relationship with type ${element.type} with id ${element.id} not present in included`
+        'info', `Relationship with type ${element.type} with id ${element.id} not present in included`
       );
     }
 

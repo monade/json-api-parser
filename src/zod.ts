@@ -1,11 +1,11 @@
-import z, { ZodObject, ZodRawShape, ZodType, objectUtil } from "zod";
-import { Parser } from "./Parser";
+import z from "zod";
 import { debug } from "./utils";
 import { Model } from "./Model";
+import { $registeredModels } from "./data";
 
-interface ZodInteropSchema<A extends ZodRawShape, R extends ZodRawShape> {
-  attributes: ZodObject<A>;
-  relationships: ZodObject<R>;
+interface ZodInteropSchema<A extends z.ZodRawShape, R extends z.ZodRawShape> {
+  attributes: z.ZodObject<A>;
+  relationships: z.ZodObject<R>;
 }
 
 const BaseModelType = z.object({ id: z.string(), _type: z.string() });
@@ -15,12 +15,12 @@ export function modelOfType<T extends string>(type: T) {
   return z.object({ id: z.string(), type: z.literal(type) });
 }
 
-export declare type InferModel<T extends ZodType<any, any, any>> = T["_output"] & Model;
+export declare type InferModel<T extends z.ZodType<any, any, any>> = T["_output"] & Model;
 
-export function declareModel<Type extends string, T extends ZodRawShape, V extends ZodRawShape, Z extends ZodInteropSchema<T, V>>(
+export function declareModel<Type extends string, T extends z.ZodRawShape, V extends z.ZodRawShape, Z extends ZodInteropSchema<T, V>>(
   type: Type, schema: Z
-): ZodObject<objectUtil.extendShape<WithType['shape'], objectUtil.extendShape<Z['attributes']['shape'], Z['relationships']['shape']>>> { //ZodObject<objectUtil.extendShape<Z['attributes']['shape'], Z['relationships']['shape']>, Z['relationships']["_def"]["unknownKeys"], Z['relationships']["_def"]["catchall"]>  {
-  Parser.$registeredModels.push({
+): z.ZodObject<z.objectUtil.extendShape<WithType['shape'], z.objectUtil.extendShape<Z['attributes']['shape'], Z['relationships']['shape']>>> { //ZodObject<objectUtil.extendShape<Z['attributes']['shape'], Z['relationships']['shape']>, Z['relationships']["_def"]["unknownKeys"], Z['relationships']["_def"]["catchall"]>  {
+  $registeredModels.push({
     type, createFn: (instance, { id, attributes, relationships }, resolverFn) => {
       instance.id = id;
       instance._type = type;
@@ -30,14 +30,14 @@ export function declareModel<Type extends string, T extends ZodRawShape, V exten
         Object.assign(instance, attributes, parsedAttributes.data);
       } else {
         Object.assign(instance, attributes);
-        debug(`Error parsing attributes "${type}: ${parsedAttributes.error.message}"`);
+        debug('error', `Error parsing attributes "${type}: ${parsedAttributes.error.message}"`);
       }
 
       if (schema.relationships['shape']['type']) {
         const parsedRelationships = z.object({ type: schema.relationships['shape']['type'] }).safeParse(attributes ?? {});
 
         if (!parsedRelationships.success) {
-          debug(`Error parsing relationships "${type}: ${parsedRelationships.error.message}"`);
+          debug('error', `Error parsing relationships "${type}: ${parsedRelationships.error.message}"`);
         }
       }
 
@@ -47,13 +47,13 @@ export function declareModel<Type extends string, T extends ZodRawShape, V exten
           (instance as any)[key] = resolverFn(relation);
         } else {
           (instance as any)[key] = resolverFn(relation);
-          debug(`Undeclared relationship "${key}" in "${type}"`);
+          debug('error', `Undeclared relationship "${key}" in "${type}"`);
         }
       }
 
       for (const key in schema.relationships['shape']) {
         if (!(key in instance)) {
-          debug(`Missing relationships "${key}" in "${type}"`);
+          debug('error', `Missing relationships "${key}" in "${type}"`);
         }
       }
 

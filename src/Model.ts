@@ -1,6 +1,24 @@
+import { $registeredRelationships } from "./data";
+import { DTO } from "./interfaces";
+
 export class Model {
   id!: string;
   _type!: string;
+
+  toDTO<T extends Model = typeof this>(): DTO<T> {
+    const response: any = { ...this };
+    delete response._type;
+
+    const rels = $registeredRelationships.find((e) => e.klass === this.constructor) ?? { attributes: {} as Record<string, any> };
+
+    for (const key in response) {
+      if (rels.attributes[key] || response[key] instanceof Model) {
+        response[`${key}Id`] = response[key]?.id ?? null;
+        delete response[key];
+      }
+    }
+    return response;
+  }
 
   toJSON(maxDepth = 100): any {
     const response: any = { ...this };

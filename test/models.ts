@@ -1,4 +1,4 @@
-import { Attr, JSONAPI, Model, Rel } from "../src";
+import { Attr, JSONAPI, Model, Rel, DTO } from "../src";
 
 export const DateParser = (data: any) => new Date(data);
 
@@ -12,6 +12,7 @@ export class Post extends Model {
 
   @Rel("user") author!: User;
   @Rel() reviewer!: User | null;
+  @Rel() relatedPost!: Post | null;
 }
 
 @JSONAPI("users")
