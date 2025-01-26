@@ -69,6 +69,13 @@ export class Parser {
       return model.createFn(instance, loadedElement, (relation) => this.parse(relation, included)) as T;
     }
 
+    instance.id = loadedElement.id;
+    instance._type = loadedElement.type;
+
+    if ('$_partial' in loadedElement) {
+      return instance as T;
+    }
+
     const attrData = $registeredAttributes.find(
       (e) => e.klass === model?.klass
     );
@@ -76,12 +83,6 @@ export class Parser {
       (e) => e.klass === model?.klass
     );
 
-    instance.id = loadedElement.id;
-    instance._type = loadedElement.type;
-
-    if ('$_partial' in loadedElement) {
-      return instance as T;
-    }
     this.parseAttributes(instance, loadedElement, attrData);
     this.parseRelationships(instance, loadedElement, relsData, included);
 
@@ -98,6 +99,9 @@ export class Parser {
         get: function<T extends object>(target: T, prop: keyof T) {
           if (prop === "$_partial") {
             return true;
+          }
+          if (prop in target) {
+            return target[prop];
           }
           const propString = prop.toString();
           debug('error', `Trying to call property "${propString}" to a model that is not included. Add "${loadedElement.type}" to included models.`, {
