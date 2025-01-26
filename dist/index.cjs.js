@@ -119,7 +119,7 @@ class Parser {
     }
     const loadedElement = Parser.load(element, included);
     const model = $registeredModels.find(e => e.type === loadedElement.type);
-    const instance = this.wrapWhenPartial(new (model?.klass || Model)(), loadedElement);
+    const instance = this.wrapWhenPartial(model, loadedElement);
     this.resolved[uniqueKey] = instance;
     if (model && model.createFn) {
       return model.createFn(instance, loadedElement, relation => this.parse(relation, included));
@@ -132,10 +132,11 @@ class Parser {
     this.parseRelationships(instance, loadedElement, relsData, included);
     return instance;
   }
-  wrapWhenPartial(instance, loadedElement) {
+  wrapWhenPartial(model, loadedElement) {
     if (!loadedElement.$_partial) {
-      return instance;
+      return new (model?.klass || Model)();
     }
+    const instance = new Model();
     return new Proxy(instance, {
       get: function (target, prop) {
         if (prop === "$_partial") {

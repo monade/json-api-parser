@@ -5,6 +5,7 @@ import { RegisteredProperty } from "./interfaces/RegisteredProperty";
 import { Model } from "./Model";
 import { $registeredAttributes, $registeredModels, $registeredRelationships } from "./data";
 import { debug } from "./utils";
+import { RegisteredModel } from "./interfaces/RegisteredModel";
 
 export class Parser {
   readonly resolved: Record<string, Model> = {};
@@ -62,7 +63,7 @@ export class Parser {
       (e) => e.type === loadedElement.type
     );
 
-    const instance = this.wrapWhenPartial(new (model?.klass || Model)(), loadedElement);
+    const instance = this.wrapWhenPartial(model, loadedElement);
     this.resolved[uniqueKey] = instance;
 
     if (model && model.createFn) {
@@ -85,10 +86,11 @@ export class Parser {
     return instance as T;
   }
 
-  wrapWhenPartial(instance: Model, loadedElement: JSONModel & { $_partial?: boolean }) {
+  wrapWhenPartial(model: RegisteredModel | undefined, loadedElement: JSONModel & { $_partial?: boolean }) {
     if (!loadedElement.$_partial) {
-      return instance;
+      return new (model?.klass || Model)();
     }
+    const instance = new Model();
     return new Proxy(
       instance,
       {
