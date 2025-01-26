@@ -1,7 +1,6 @@
 import { JSONData } from "./interfaces/JSONData";
 import { JSONModel } from "./interfaces/JSONModel";
 import { Model } from "./Model";
-import { RegisteredModel } from "./interfaces/RegisteredModel";
 export declare class Parser {
     private data;
     private included;
@@ -11,7 +10,7 @@ export declare class Parser {
     private parse;
     parseList(list: JSONModel[], included: JSONModel[]): unknown[];
     parseElement<T>(element: JSONModel, included: JSONModel[]): T;
-    wrapWhenPartial(model: RegisteredModel | undefined, loadedElement: JSONModel & {
+    wrapWhenPartial(instance: Model, loadedElement: JSONModel & {
         $_partial?: boolean;
     }): Model;
     private parseRelationships;

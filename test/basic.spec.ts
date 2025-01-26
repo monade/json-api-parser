@@ -115,7 +115,7 @@ test("logs undeclared attributes", () => {
 test("toJSON has a max depth", () => {
   const post = parsed[0];
   expect(JSON.stringify(post.toJSON(1))).toBe(`
-    {"id":"2","name":"My post","ciao":null,"content":"ciao","createdAt":"2020-10-10T10:32:00.000Z","enabled":true,"author":{"id":"3","firstName":"Gino","lastName":"Pino","createdAt":"2020-10-15T10:32:00.000Z"},"reviewer":null,"relatedPost":{"id":"10","enabled":true}}
+    {"id":"2","name":"My post","ciao":null,"content":"ciao","createdAt":"2020-10-10T10:32:00.000Z","enabled":true,"author":{"id":"3","firstName":"Gino","lastName":"Pino","createdAt":"2020-10-15T10:32:00.000Z"},"reviewer":null,"relatedPost":{"id":"10"}}
   `.trim());
 });
 
