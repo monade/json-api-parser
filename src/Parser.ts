@@ -6,8 +6,6 @@ import { Model } from "./Model";
 import { $registeredAttributes, $registeredModels, $registeredRelationships } from "./data";
 import { debug } from "./utils";
 
-const IGNORED_KEYS = ['Symbol(', '_', '$', '#'];
-
 export class Parser {
   readonly resolved: Record<string, Model> = {};
 
@@ -88,28 +86,25 @@ export class Parser {
   }
 
   wrapWhenPartial(instance: Model, loadedElement: JSONModel & { $_partial?: boolean }) {
-    if (loadedElement.$_partial) {
-      return new Proxy(
-        instance,
-        {
-          get: function<T extends object>(target: T, prop: keyof T) {
-            if (prop === "$_partial") {
-              return true;
-            }
-            if (prop in target) {
-              return target[prop];
-            }
-            const propString = prop.toString();
-            if (IGNORED_KEYS.some((k) => propString.startsWith(k))) {
-              return undefined;
-            }
-            debug('error', `Trying to call property "${prop.toString()}" to a model that is not included. Add "${loadedElement.type}" to included models.`);
-            return undefined;
-          },
-        })
+    if (!loadedElement.$_partial) {
+      return instance;
     }
-
-    return instance;
+    return new Proxy(
+      instance,
+      {
+        get: function<T extends object>(target: T, prop: keyof T) {
+          if (prop === "$_partial") {
+            return true;
+          }
+          const propString = prop.toString();
+          debug('error', `Trying to call property "${propString}" to a model that is not included. Add "${loadedElement.type}" to included models.`, {
+            model: instance,
+            property: propString,
+            type: 'ACCESSING_NOT_INCLUDED_MODEL'
+          });
+          return target[prop];
+        },
+      });
   }
 
   private parseRelationships(instance: Model, loadedElement: JSONModel, relsData: RegisteredAttribute | undefined, included: JSONModel[]) {

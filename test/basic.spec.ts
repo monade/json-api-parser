@@ -94,6 +94,8 @@ test("returns a Proxy when accessing to a not included model", () => {
   expect(model.relatedPost?.content).toBe(undefined);
   expect(logs.at(-1)).toBe("Trying to call property \"content\" to a model that is not included. Add \"posts\" to included models.");
   expect((model.relatedPost as any)?.$_partial).toBe(true);
+  expect(model.relatedPost?.['name']).toBe(undefined);
+  expect(logs.at(-1)).toBe("Trying to call property \"name\" to a model that is not included. Add \"posts\" to included models.");
 });
 
 test("parses circular references", () => {

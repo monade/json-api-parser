@@ -78,7 +78,6 @@ debug.adapter = (level, ...args) => {
   }
 };
 
-const IGNORED_KEYS = ['Symbol(', '_', '$', '#'];
 class Parser {
   resolved = {};
   constructor(data, included = []) {
@@ -134,25 +133,23 @@ class Parser {
     return instance;
   }
   wrapWhenPartial(instance, loadedElement) {
-    if (loadedElement.$_partial) {
-      return new Proxy(instance, {
-        get: function (target, prop) {
-          if (prop === "$_partial") {
-            return true;
-          }
-          if (prop in target) {
-            return target[prop];
-          }
-          const propString = prop.toString();
-          if (IGNORED_KEYS.some(k => propString.startsWith(k))) {
-            return undefined;
-          }
-          debug('error', `Trying to call property "${prop.toString()}" to a model that is not included. Add "${loadedElement.type}" to included models.`);
-          return undefined;
-        }
-      });
+    if (!loadedElement.$_partial) {
+      return instance;
     }
-    return instance;
+    return new Proxy(instance, {
+      get: function (target, prop) {
+        if (prop === "$_partial") {
+          return true;
+        }
+        const propString = prop.toString();
+        debug('error', `Trying to call property "${propString}" to a model that is not included. Add "${loadedElement.type}" to included models.`, {
+          model: instance,
+          property: propString,
+          type: 'ACCESSING_NOT_INCLUDED_MODEL'
+        });
+        return target[prop];
+      }
+    });
   }
   parseRelationships(instance, loadedElement, relsData, included) {
     for (const key in loadedElement.relationships) {
