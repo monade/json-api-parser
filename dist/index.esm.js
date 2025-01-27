@@ -56,20 +56,28 @@ class Model {
   }
 }
 
-function debug(level, ...args) {
-  debug.adapter(level, ...args);
+const DEBUG = {
+  ACCESSING_NOT_INCLUDED_MODEL: 'ACCESSING_NOT_INCLUDED_MODEL',
+  UNDECLARED_RELATIONSHOP: 'UNDECLARED_RELATIONSHOP',
+  MISSING_RELATIONSHIP: 'MISSING_RELATIONSHIP',
+  UNDECLARED_ATTRIBUTE: 'UNDECLARED_ATTRIBUTE',
+  MISSING_ATTRIBUTE: 'MISSING_ATTRIBUTE',
+  SKIPPED_INCLUDED_RELATIONSHIP: 'SKIPPED_INCLUDED_RELATIONSHIP'
+};
+function debug(level, message, meta) {
+  debug.adapter(level, message, meta);
 }
-debug.adapter = (level, ...args) => {
+debug.adapter = (level, message, meta) => {
   switch (level) {
     case 'warn':
-      console.warn(...args);
+      console.warn(message, meta);
       break;
     case 'error':
-      console.error(...args);
+      console.error(message, meta);
       break;
     case 'info':
     default:
-      console.log(...args);
+      console.log(message, meta);
       break;
   }
 };
@@ -139,7 +147,7 @@ class Parser {
     return new Proxy(instance, {
       get: function (target, prop) {
         if (prop === "$_partial") {
-          return target[prop];
+          return true;
         }
         if (prop in target) {
           return target[prop];
@@ -148,7 +156,7 @@ class Parser {
         debug('error', `Trying to call property "${propString}" to a model that is not included. Add "${loadedElement.type}" to included models.`, {
           model: instance,
           property: propString,
-          type: 'ACCESSING_NOT_INCLUDED_MODEL'
+          type: DEBUG.ACCESSING_NOT_INCLUDED_MODEL
         });
         return target[prop];
       }
@@ -162,7 +170,10 @@ class Parser {
         instance[parser.key] = parser.parser(this.parse(relation, included));
       } else {
         instance[key] = this.parse(relation, included);
-        debug('warn', `Undeclared relationship "${key}" in "${loadedElement.type}"`);
+        debug('warn', `Undeclared relationship "${key}" in "${loadedElement.type}"`, {
+          relationship: key,
+          type: DEBUG.UNDECLARED_RELATIONSHOP
+        });
       }
     }
     if (relsData) {
@@ -172,7 +183,10 @@ class Parser {
           if ("default" in parser) {
             instance[parser.key] = parser.default;
           } else {
-            debug('warn', `Missing relationships "${key}" in "${loadedElement.type}"`);
+            debug('warn', `Missing relationships "${key}" in "${loadedElement.type}"`, {
+              relationship: key,
+              type: DEBUG.MISSING_RELATIONSHIP
+            });
           }
         }
       }
@@ -185,7 +199,10 @@ class Parser {
         instance[parser.key] = parser.parser(loadedElement.attributes[key]);
       } else {
         instance[key] = loadedElement.attributes[key];
-        debug('warn', `Undeclared key "${key}" in "${loadedElement.type}"`);
+        debug('warn', `Undeclared @Attr() "${key}" in model "${loadedElement.type}"`, {
+          attribute: key,
+          type: DEBUG.UNDECLARED_ATTRIBUTE
+        });
       }
     }
     if (attrData) {
@@ -195,7 +212,10 @@ class Parser {
           if ("default" in parser) {
             instance[parser.key] = parser.default;
           } else {
-            debug('warn', `Missing attribute "${key}" in "${loadedElement.type}"`);
+            debug('warn', `Missing attribute "${key}" in "${loadedElement.type}"`, {
+              attribute: key,
+              type: DEBUG.MISSING_ATTRIBUTE
+            });
           }
         }
       }
@@ -204,7 +224,10 @@ class Parser {
   static load(element, included) {
     const found = included.find(e => e.id == element.id && e.type === element.type);
     if (!found) {
-      debug('info', `Relationship with type ${element.type} with id ${element.id} not present in included`);
+      debug('info', `Relationship with type ${element.type} with id ${element.id} not present in included. Skipping...`, {
+        model: element,
+        type: DEBUG.SKIPPED_INCLUDED_RELATIONSHIP
+      });
     }
     return found || {
       ...element,
@@ -265,4 +288,4 @@ function JSONAPI(type) {
   };
 }
 
-export { Attr, JSONAPI, Model, Parser, Rel, debug };
+export { Attr, DEBUG, JSONAPI, Model, Parser, Rel, debug };
