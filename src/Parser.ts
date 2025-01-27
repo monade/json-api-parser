@@ -4,7 +4,7 @@ import { RegisteredAttribute } from "./interfaces/RegisteredAttribute";
 import { RegisteredProperty } from "./interfaces/RegisteredProperty";
 import { Model } from "./Model";
 import { $registeredAttributes, $registeredModels, $registeredRelationships } from "./data";
-import { debug } from "./utils";
+import { debug, DEBUG } from "./utils";
 import { RegisteredModel } from "./interfaces/RegisteredModel";
 
 export class Parser {
@@ -100,7 +100,7 @@ export class Parser {
       {
         get: function<T extends object>(target: T, prop: keyof T) {
           if (prop === "$_partial") {
-            return target[prop];
+            return true;
           }
           if (prop in target) {
             return target[prop];
@@ -109,7 +109,7 @@ export class Parser {
           debug('error', `Trying to call property "${propString}" to a model that is not included. Add "${loadedElement.type}" to included models.`, {
             model: instance,
             property: propString,
-            type: 'ACCESSING_NOT_INCLUDED_MODEL'
+            type: DEBUG.ACCESSING_NOT_INCLUDED_MODEL
           });
           return target[prop];
         },
@@ -126,7 +126,10 @@ export class Parser {
         );
       } else {
         (instance as any)[key] = this.parse(relation, included);
-        debug('warn', `Undeclared relationship "${key}" in "${loadedElement.type}"`);
+        debug('warn', `Undeclared relationship "${key}" in "${loadedElement.type}"`, {
+          relationship: key,
+          type: DEBUG.UNDECLARED_RELATIONSHOP
+        });
       }
     }
 
@@ -137,7 +140,10 @@ export class Parser {
           if ("default" in parser) {
             (instance as any)[parser.key] = parser.default;
           } else {
-            debug('warn', `Missing relationships "${key}" in "${loadedElement.type}"`);
+            debug('warn', `Missing relationships "${key}" in "${loadedElement.type}"`, {
+              relationship: key,
+              type: DEBUG.MISSING_RELATIONSHIP,
+            });
           }
         }
       }
@@ -153,7 +159,10 @@ export class Parser {
         );
       } else {
         (instance as any)[key] = loadedElement.attributes[key];
-        debug('warn', `Undeclared key "${key}" in "${loadedElement.type}"`);
+        debug('warn', `Undeclared @Attr() "${key}" in model "${loadedElement.type}"`, {
+          attribute: key,
+          type: DEBUG.UNDECLARED_ATTRIBUTE
+        });
       }
     }
 
@@ -164,7 +173,10 @@ export class Parser {
           if ("default" in parser) {
             (instance as any)[parser.key] = parser.default;
           } else {
-            debug('warn', `Missing attribute "${key}" in "${loadedElement.type}"`);
+            debug('warn', `Missing attribute "${key}" in "${loadedElement.type}"`, {
+              attribute: key,
+              type: DEBUG.MISSING_ATTRIBUTE,
+            });
           }
         }
       }
@@ -177,7 +189,11 @@ export class Parser {
     );
     if (!found) {
       debug(
-        'info', `Relationship with type ${element.type} with id ${element.id} not present in included`
+        'info', `Relationship with type ${element.type} with id ${element.id} not present in included. Skipping...`,
+        {
+          model: element,
+          type: DEBUG.SKIPPED_INCLUDED_RELATIONSHIP
+        }
       );
     }
 
