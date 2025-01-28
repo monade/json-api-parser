@@ -5,7 +5,7 @@ export class Model {
   id!: string;
   _type!: string;
 
-  toDTO<T extends Model = typeof this>(): DTO<T> {
+  toDTO(): DTO<this> {
     const response: any = { ...this };
     delete response._type;
 
