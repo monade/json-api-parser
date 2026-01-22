@@ -22,9 +22,9 @@ export declare class Parser {
         type: string;
         attributes?: {
             [key: string]: any;
-        } | undefined;
+        };
         relationships?: {
             [key: string]: JSONData;
-        } | undefined;
+        };
     };
 }

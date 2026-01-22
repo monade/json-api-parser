@@ -1,6 +1,8 @@
 import resolve from "@rollup/plugin-node-resolve";
-import pkg from "./package.json";
 import babel from "@rollup/plugin-babel";
+import { readFileSync } from "fs";
+
+const pkg = JSON.parse(readFileSync("./package.json", "utf-8"));
 const extensions = [".js", ".ts"];
 
 export default [
@@ -24,6 +26,7 @@ export default [
       babel({
         exclude: "node_modules/**",
         extensions,
+        babelHelpers: "bundled",
       }),
     ],
   },

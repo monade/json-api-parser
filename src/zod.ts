@@ -9,17 +9,19 @@ interface ZodInteropSchema<A extends z.ZodRawShape, R extends z.ZodRawShape> {
 }
 
 const BaseModelType = z.object({ id: z.string(), _type: z.string() });
-type WithType = typeof BaseModelType;
 
 export function modelOfType<T extends string>(type: T) {
   return z.object({ id: z.string(), type: z.literal(type) });
 }
 
-export declare type InferModel<T extends z.ZodType<any, any, any>> = T["_output"] & Model;
+export declare type InferModel<T extends z.ZodType<any, any, any>> = z.infer<T> & Model;
+
+type MergedShape<A extends z.ZodRawShape, B extends z.ZodRawShape, C extends z.ZodRawShape> =
+  z.ZodObject<A & B & C>;
 
 export function declareModel<Type extends string, T extends z.ZodRawShape, V extends z.ZodRawShape, Z extends ZodInteropSchema<T, V>>(
   type: Type, schema: Z
-): z.ZodObject<z.objectUtil.extendShape<WithType['shape'], z.objectUtil.extendShape<Z['attributes']['shape'], Z['relationships']['shape']>>> { //ZodObject<objectUtil.extendShape<Z['attributes']['shape'], Z['relationships']['shape']>, Z['relationships']["_def"]["unknownKeys"], Z['relationships']["_def"]["catchall"]>  {
+): MergedShape<{ id: z.ZodString; _type: z.ZodString }, Z['attributes']['shape'], Z['relationships']['shape']> {
   $registeredModels.push({
     type, createFn: (instance, { id, attributes, relationships }, resolverFn) => {
       instance.id = id;
@@ -63,6 +65,6 @@ export function declareModel<Type extends string, T extends z.ZodRawShape, V ext
 
   return schema
     .attributes
-    .merge(BaseModelType)
-    .merge(schema.relationships) as any;
+    .extend(BaseModelType.shape)
+    .extend(schema.relationships.shape) as MergedShape<{ id: z.ZodString; _type: z.ZodString }, Z['attributes']['shape'], Z['relationships']['shape']>;
 }

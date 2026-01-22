@@ -48,7 +48,7 @@ export class Model {
           formData.append(key + "[]", value);
         }
       } else if (data[key] instanceof File) {
-        formData.append(key, data[key], data[key].filename);
+        formData.append(key, data[key], data[key].name);
       } else {
         formData.append(key, data[key]);
       }

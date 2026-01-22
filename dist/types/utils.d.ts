@@ -12,6 +12,6 @@ type DebugMetadata = {
 };
 declare function debug(level: 'info' | 'warn' | 'error', message: string, meta?: DebugMetadata): void;
 declare namespace debug {
-    var adapter: (level: "error" | "info" | "warn", message: string, meta?: DebugMetadata | undefined) => void;
+    var adapter: (level: "info" | "warn" | "error", message: string, meta?: DebugMetadata) => void;
 }
 export { debug, DEBUG };
